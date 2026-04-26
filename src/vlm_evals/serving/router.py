@@ -64,13 +64,17 @@ def _make_task(request: PredictRequest) -> EvalTask:
 def predict_one(request: PredictRequest) -> dict:
     task = _make_task(request)
     backend = create_backend(request.backend_config)
-    prompt = PromptBuilder().build(task)
-    prediction = backend.predict(task, prompt, schema_json_for(task.expected_schema))
-    prediction.update(parse_and_validate(prediction.get("raw_output"), task.expected_schema))
-    prediction.update(hallucination_flags(task, prediction))
-    prediction.update(route_for_review(task, prediction, ReviewPolicy()))
-    prediction["score"] = score_prediction(task, prediction.get("parsed_output"))
-    return prediction
+    try:
+        backend.start()
+        prompt = PromptBuilder().build(task)
+        prediction = backend.predict(task, prompt, schema_json_for(task.expected_schema))
+        prediction.update(parse_and_validate(prediction.get("raw_output"), task.expected_schema))
+        prediction.update(hallucination_flags(task, prediction))
+        prediction.update(route_for_review(task, prediction, ReviewPolicy()))
+        prediction["score"] = score_prediction(task, prediction.get("parsed_output"))
+        return prediction
+    finally:
+        backend.close()
 
 
 @router.post("/predict")
@@ -103,4 +107,3 @@ def evaluate() -> dict:
 @router.get("/metrics")
 def metrics() -> dict:
     return {"status": "ok", "note": "Service counters can be wired here for deployment."}
-

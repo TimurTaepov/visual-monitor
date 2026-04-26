@@ -1,5 +1,5 @@
 backend: vllm
-model_name: HuggingFaceTB/SmolVLM2-2.2B-Instruct
+model_name: OpenGVLab/InternVL3_5-2B-HF
 base_url: http://127.0.0.1:8001/v1
 temperature: 0.0
 max_tokens: 256

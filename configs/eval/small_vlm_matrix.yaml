@@ -11,7 +11,5 @@ review:
 backends:
   - configs/backends/ministral3_3b_vllm.yaml
   - configs/backends/qwen3_vl_2b_vllm.yaml
-  - configs/backends/internvl3_5_2b_hf.yaml
-  - configs/backends/lfm25_vl_1_6b_hf.yaml
+  - configs/backends/internvl3_5_2b_vllm.yaml
   - configs/backends/smolvlm2_2_2b_vllm.yaml
-

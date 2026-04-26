@@ -16,6 +16,12 @@ class VisionModelBackend(ABC):
     def predict(self, task: EvalTask, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
         raise NotImplementedError
 
+    def start(self) -> None:
+        """Prepare the backend before predictions are sent."""
+
+    def close(self) -> None:
+        """Release backend resources after predictions finish."""
+
     def model_info(self) -> dict[str, Any]:
         return {
             "backend": self.backend_name,
@@ -53,4 +59,3 @@ def prediction_record(
         "estimated_cost_usd": estimated_cost_usd,
         "error": error,
     }
-

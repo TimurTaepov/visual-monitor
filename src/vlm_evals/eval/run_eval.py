@@ -37,6 +37,20 @@ def _error_prediction(task: EvalTask, backend_info: dict[str, Any], error: Excep
     )
 
 
+def _finalize_prediction(
+    *,
+    task: EvalTask,
+    prediction: dict[str, Any],
+    policy: ReviewPolicy,
+) -> dict[str, Any]:
+    validation = parse_and_validate(prediction.get("raw_output"), task.expected_schema)
+    prediction.update(validation)
+    prediction.update(hallucination_flags(task, prediction))
+    prediction.update(route_for_review(task, prediction, policy))
+    prediction["score"] = score_prediction(task, prediction.get("parsed_output"))
+    return prediction
+
+
 def evaluate_backend(
     *,
     config: dict[str, Any],
@@ -53,21 +67,46 @@ def evaluate_backend(
     policy = _review_policy(config)
     predictions: list[dict[str, Any]] = []
 
-    for task in tasks:
-        prompt = prompt_builder.build(task)
-        schema = schema_json_for(task.expected_schema)
+    try:
+        backend.start()
+    except Exception as exc:
         try:
-            with Timer() as timer:
-                prediction = backend.predict(task, prompt, schema)
-        except Exception as exc:
-            prediction = _error_prediction(task, backend_info, exc, timer.elapsed_ms if "timer" in locals() else 0.0)
+            backend.close()
+        except Exception:
+            pass
+        for task in tasks:
+            prediction = _error_prediction(task, backend_info, exc, 0.0)
+            predictions.append(_finalize_prediction(task=task, prediction=prediction, policy=policy))
+        metrics = compute_metrics(tasks, predictions)
+        return {
+            "backend_info": backend_info,
+            "backend_config": backend_config,
+            "predictions": predictions,
+            "metrics": metrics,
+        }
 
-        validation = parse_and_validate(prediction.get("raw_output"), task.expected_schema)
-        prediction.update(validation)
-        prediction.update(hallucination_flags(task, prediction))
-        prediction.update(route_for_review(task, prediction, policy))
-        prediction["score"] = score_prediction(task, prediction.get("parsed_output"))
-        predictions.append(prediction)
+    close_error: str | None = None
+    try:
+        for task in tasks:
+            prompt = prompt_builder.build(task)
+            schema = schema_json_for(task.expected_schema)
+            timer = Timer()
+            try:
+                with timer:
+                    prediction = backend.predict(task, prompt, schema)
+            except Exception as exc:
+                prediction = _error_prediction(task, backend_info, exc, timer.elapsed_ms)
+
+            predictions.append(_finalize_prediction(task=task, prediction=prediction, policy=policy))
+    finally:
+        try:
+            backend.close()
+        except Exception as exc:
+            close_error = f"{exc.__class__.__name__}: {exc}"
+
+    if close_error:
+        for prediction in predictions:
+            prediction["backend_close_error"] = close_error
 
     metrics = compute_metrics(tasks, predictions)
     return {
@@ -146,4 +185,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
