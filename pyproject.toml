@@ -21,11 +21,8 @@ dev = [
   "pytest>=8.0",
   "ruff>=0.5",
 ]
-hf = [
-  "accelerate>=0.30",
-  "pillow>=10",
-  "torch",
-  "transformers>=4.51",
+vllm = [
+  "vllm",
 ]
 
 [tool.setuptools.packages.find]
@@ -34,4 +31,3 @@ where = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-

@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 from vlm_evals.backends.base import VisionModelBackend
-from vlm_evals.backends.hf_backend import HFBackend
 from vlm_evals.backends.mock_backend import MockBackend
 from vlm_evals.backends.provider_backend import ProviderBackend
 from vlm_evals.backends.vllm_backend import VLLMBackend
@@ -29,6 +28,10 @@ def create_backend(path_or_config: str | Path | dict[str, Any]) -> VisionModelBa
     if backend_type == "provider":
         return ProviderBackend(config)
     if backend_type == "hf":
-        return HFBackend(config)
+        raise ValueError(
+            "The generic HF backend has been removed from the active pipeline. "
+            "Use backend: vllm with a Hugging Face model id so the model is served "
+            "through a real OpenAI-compatible vLLM server, or add a model-family-specific "
+            "HF adapter with explicit processor/chat-template handling."
+        )
     raise ValueError(f"Unknown backend type {backend_type!r}")
-

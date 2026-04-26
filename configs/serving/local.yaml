@@ -1,6 +1,5 @@
-default_backend: configs/backends/mock_oracle.yaml
+default_backend: configs/backends/qwen3_vl_2b_vllm.yaml
 tasks_path: data/tasks/eval_tasks.jsonl
 prompt_dir: prompts
 schema_dir: schemas
 report_path: reports/api_eval_report.md
-
