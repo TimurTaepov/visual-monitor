@@ -1,10 +1,19 @@
-# Model Backend Notes
+# Model backend notes
 
-Record local compatibility here as models are tested.
+Use this file to record which models actually run in the local environment.
 
-| Model | vLLM status | Notes |
+| Model | Status | Notes |
 |---|---|---|
-| mistralai/Ministral-3-3B-Instruct-2512 | not tested | Managed through `backend: vllm`. |
-| Qwen/Qwen3-VL-2B-Instruct | not tested | Managed through `backend: vllm`. |
-| OpenGVLab/InternVL3_5-2B-HF | not tested | Managed through `backend: vllm`. |
-| HuggingFaceTB/SmolVLM2-2.2B-Instruct | not tested | Managed through `backend: vllm`. |
+| mistralai/Ministral-3-3B-Instruct-2512 | not tested | vLLM config exists. |
+| Qwen/Qwen3-VL-2B-Instruct | not tested | vLLM config exists. |
+| OpenGVLab/InternVL3_5-2B-HF | not tested | vLLM config exists. |
+| HuggingFaceTB/SmolVLM2-2.2B-Instruct | not tested | vLLM config exists. |
+
+When testing a model, add:
+
+- machine/GPU
+- vLLM version
+- model revision, if pinned
+- whether startup succeeded
+- whether image requests worked
+- any special flags needed in `serve.args`

@@ -1,13 +1,26 @@
-# Evaluation Methodology
+# Evaluation methodology
 
-The benchmark evaluates a model/backend/prompt combination across:
+Each run evaluates one or more model configs against the same task file.
+
+Each task row includes:
+
+- image path
+- task type
+- prompt template
+- expected schema
+- labels
+- metadata
+
+For each task, the runner sends the image and prompt to the backend, parses the answer, validates the JSON, and compares the answer to the label.
+
+The report includes:
 
 - task correctness
-- structured output reliability
-- hallucination and unsupported evidence checks
-- human-review routing quality
-- latency and throughput
-- cost proxy
+- valid JSON rate
+- schema-valid output rate
+- simple checks for wrong, high-confidence claims
+- human-review routing reasons
+- latency
+- estimated cost, when configured
 
-The first local run uses a deterministic mock backend to validate the harness. Real model reports should include package versions, hardware, model commit or revision, backend config, and dataset version.
-
+For real model runs, record the model revision, vLLM version, hardware, backend config, and dataset version. Otherwise the numbers will be hard to reproduce.

@@ -27,11 +27,4 @@ def create_backend(path_or_config: str | Path | dict[str, Any]) -> VisionModelBa
         return VLLMBackend(config)
     if backend_type == "provider":
         return ProviderBackend(config)
-    if backend_type == "hf":
-        raise ValueError(
-            "The generic HF backend has been removed from the active pipeline. "
-            "Use backend: vllm with a Hugging Face model id so the model is served "
-            "through a real OpenAI-compatible vLLM server, or add a model-family-specific "
-            "HF adapter with explicit processor/chat-template handling."
-        )
     raise ValueError(f"Unknown backend type {backend_type!r}")
