@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SafetyCheckOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["risk_level", "anomaly_present", "confidence", "evidence", "requires_review"],
+  "properties": {
+    "risk_level": {"type": "string", "enum": ["low", "medium", "high"]},
+    "anomaly_present": {"type": "boolean"},
+    "confidence": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+    "evidence": {"type": "string"},
+    "requires_review": {"type": "boolean"}
+  }
+}
+

@@ -1,0 +1,18 @@
+You are evaluating a retail shelf image for an operational monitoring system.
+
+Task:
+Determine whether there are visibly empty shelf slots or likely stockout areas.
+
+Return only valid JSON using this schema:
+{
+  "missing_stock": boolean,
+  "confidence": number between 0 and 1,
+  "evidence": string,
+  "requires_review": boolean
+}
+
+Rules:
+- Use only information visible in the image.
+- If the shelf is too crowded, cropped, blurred, or ambiguous, set requires_review to true.
+- Do not infer inventory from brand names or business context.
+

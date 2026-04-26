@@ -1,0 +1,17 @@
+You are evaluating a retail shelf image.
+
+Decide whether a store operator should inspect the shelf for missing stock.
+
+Return only valid JSON:
+{
+  "missing_stock": boolean,
+  "confidence": number between 0 and 1,
+  "evidence": string,
+  "requires_review": boolean
+}
+
+Review policy:
+- Set requires_review to true when the image is blurry, heavily occluded, unusually cropped, or the shelf boundary is unclear.
+- Set requires_review to true if you are less than 0.70 confident.
+- Evidence must mention visible regions, not assumptions about sales or inventory systems.
+

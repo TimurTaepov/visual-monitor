@@ -1,0 +1,10 @@
+run_id: retail_shelf_v1
+tasks_path: data/tasks/eval_tasks.jsonl
+task_types:
+  - retail_shelf_check
+output_dir: reports
+prompt_dir: prompts
+schema_dir: schemas
+backends:
+  - configs/backends/mock_oracle.yaml
+

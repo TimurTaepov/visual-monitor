@@ -1,0 +1,16 @@
+run_id: local_mock_eval
+tasks_path: data/tasks/eval_tasks.jsonl
+output_dir: reports
+predictions_path: reports/local_mock_predictions.jsonl
+report_path: reports/local_mock_report.md
+prompt_dir: prompts
+schema_dir: schemas
+default_prompt_id: object_presence_v1
+review:
+  confidence_threshold: 0.7
+  high_risk_task_types:
+    - industrial_safety_check
+    - safety_helmet_check
+backends:
+  - configs/backends/mock_oracle.yaml
+

@@ -1,0 +1,7 @@
+{"task_id":"helmet_0001","labels":{"answer":true},"label_source":"derived_from_shwd_voc","label_version":"v1.0"}
+{"task_id":"helmet_0002","labels":{"answer":false},"label_source":"derived_from_shwd_voc","label_version":"v1.0"}
+{"task_id":"retail_0001","labels":{"missing_stock":true},"label_source":"manual_review_layer","label_version":"v1.0"}
+{"task_id":"retail_0002","labels":{"missing_stock":false},"label_source":"manual_review_layer","label_version":"v1.0"}
+{"task_id":"industrial_0001","labels":{"anomaly_present":true,"risk_level":"medium"},"label_source":"derived_from_mvtec_folder_and_mask","label_version":"v1.0"}
+{"task_id":"industrial_0002","labels":{"anomaly_present":false,"risk_level":"low"},"label_source":"derived_from_mvtec_folder","label_version":"v1.0"}
+

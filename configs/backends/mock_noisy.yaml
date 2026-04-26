@@ -1,0 +1,9 @@
+backend: mock
+model_name: mock-noisy-small-vlm
+behavior: noisy
+error_rate: 0.2
+temperature: 0.0
+max_tokens: 256
+timeout_seconds: 10
+estimated_cost_per_1k_requests_usd: 0.0
+

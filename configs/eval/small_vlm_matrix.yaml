@@ -1,0 +1,17 @@
+run_id: small_vlm_matrix_v1
+tasks_path: data/tasks/eval_tasks.jsonl
+output_dir: reports
+prompt_dir: prompts
+schema_dir: schemas
+review:
+  confidence_threshold: 0.7
+  high_risk_task_types:
+    - industrial_safety_check
+    - safety_helmet_check
+backends:
+  - configs/backends/ministral3_3b_vllm.yaml
+  - configs/backends/qwen3_vl_2b_vllm.yaml
+  - configs/backends/internvl3_5_2b_hf.yaml
+  - configs/backends/lfm25_vl_1_6b_hf.yaml
+  - configs/backends/smolvlm2_2_2b_vllm.yaml
+

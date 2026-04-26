@@ -1,0 +1,2 @@
+{"task_id":"hard_retail_0001","image_path":"data/images/retail/hard_retail_0001.jpg","task_type":"retail_shelf_check","prompt_template":"retail_shelf_v2","expected_schema":"retail_shelf_schema","labels":{"missing_stock":false},"metadata":{"domain":"retail","source_dataset":"sku110k","scene_type":"shelf","lighting":"low","is_hard_case":true,"failure_mode":"ambiguous_empty_slot","label_version":"v1.0"}}
+

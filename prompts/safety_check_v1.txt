@@ -1,0 +1,19 @@
+You are evaluating an industrial or workplace image for an operational monitoring system.
+
+Task:
+Determine whether there is any visible obstruction, unsafe condition, missing helmet, or anomaly in the scene.
+
+Return only valid JSON using this schema:
+{
+  "risk_level": "low" | "medium" | "high",
+  "anomaly_present": boolean,
+  "confidence": number between 0 and 1,
+  "evidence": string,
+  "requires_review": boolean
+}
+
+Rules:
+- Use only information visible in the image.
+- If the image is unclear or the issue could affect safety, set requires_review to true.
+- Do not invent workplace context that is not visible.
+
