@@ -1,0 +1,27 @@
+run_id: subtlebench_vllm
+output_dir: reports/subtlebench
+prompt_dir: prompts
+default_prompt_id: subtlebench_multiple_choice_v1
+
+dataset:
+  name: subtlebench
+  path: VLM-SubtleBench
+  split: test
+  category: null
+  domain: null
+  source: null
+  max_examples: null
+  skip_missing_images: true
+
+scoring:
+  kind: multiple_choice
+  label_field: answer
+  prediction_field: answer
+  normalize: true
+
+review:
+  confidence_threshold: 0.7
+  high_risk_task_types: []
+
+backends:
+  - configs/backends/qwen3_vl_2b_vllm.yaml

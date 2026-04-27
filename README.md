@@ -9,7 +9,7 @@ The repo currently supports:
 - one-image and multi-image eval tasks
 - local vLLM serving for Hugging Face model ids
 - optional provider API backends
-- VLM-SubtleBench multiple-choice evaluation through Together or another OpenAI-compatible endpoint
+- VLM-SubtleBench multiple-choice evaluation with any configured backend
 - a small local check that runs without models or API keys
 - reports with accuracy, JSON validity, review routing, and latency numbers
 - a FastAPI wrapper for `/predict` and `/evaluate`
@@ -46,10 +46,20 @@ make compare
 
 ## Run VLM-SubtleBench
 
-Download the dataset from Hugging Face into `VLM-SubtleBench/`, set `TOGETHER_API_KEY`, then run:
+Download the dataset from Hugging Face into `VLM-SubtleBench/`.
+
+Then choose a backend config. The benchmark does not care whether the model is behind Together, another OpenAI-compatible provider, or a vLLM server. The eval config decides that through its `backends` list.
+
+The default command uses the Together example config:
 
 ```bash
 make eval-subtlebench
 ```
 
-The SubtleBench config loads paired-image questions, sends both images to the model, and scores the returned `answer` field against the benchmark label.
+To run the same benchmark through a vLLM-served model:
+
+```bash
+make eval-subtlebench SUBTLEBENCH_CONFIG=configs/eval/subtlebench_vllm.yaml
+```
+
+The SubtleBench config loads paired-image questions, sends both images to the chosen backend, and scores the returned `answer` field against the benchmark label.
