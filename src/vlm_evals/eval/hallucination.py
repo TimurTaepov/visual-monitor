@@ -2,13 +2,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from vlm_evals.eval.metrics import score_prediction
+from vlm_evals.eval.metrics import ScoringConfig, score_prediction
 from vlm_evals.tasks.schemas import EvalTask
 
 
-def hallucination_flags(task: EvalTask, prediction: dict[str, Any]) -> dict[str, Any]:
+def hallucination_flags(
+    task: EvalTask,
+    prediction: dict[str, Any],
+    scoring: ScoringConfig | None = None,
+) -> dict[str, Any]:
     parsed = prediction.get("parsed_output")
-    score = score_prediction(task, parsed)
+    score = score_prediction(task, parsed, scoring)
     confidence = 0.0
     evidence = ""
     if isinstance(parsed, dict):
@@ -24,4 +28,3 @@ def hallucination_flags(task: EvalTask, prediction: dict[str, Any]) -> dict[str,
         "unsupported_evidence": unsupported_evidence,
         "overconfident_wrong": overconfident_wrong,
     }
-

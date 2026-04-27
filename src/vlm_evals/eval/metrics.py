@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from dataclasses import dataclass
 from statistics import mean
 from typing import Any
 
@@ -13,25 +14,62 @@ TASK_PRIMARY_LABEL: dict[str, str] = {
 }
 
 
-def primary_label_field(task: EvalTask) -> str | None:
+@dataclass(frozen=True)
+class ScoringConfig:
+    kind: str = "task_primary_label"
+    label_field: str | None = None
+    prediction_field: str | None = None
+    normalize: bool = True
+
+
+def scoring_config_from_dict(config: dict[str, Any]) -> ScoringConfig:
+    scoring = config.get("scoring", {}) or {}
+    return ScoringConfig(
+        kind=str(scoring.get("kind", "task_primary_label")),
+        label_field=scoring.get("label_field"),
+        prediction_field=scoring.get("prediction_field"),
+        normalize=bool(scoring.get("normalize", True)),
+    )
+
+
+def primary_label_field(task: EvalTask, scoring: ScoringConfig | None = None) -> str | None:
+    if scoring and scoring.label_field:
+        return scoring.label_field
     return TASK_PRIMARY_LABEL.get(task.task_type)
 
 
-def score_prediction(task: EvalTask, parsed_output: dict[str, Any] | None) -> dict[str, Any]:
-    field = primary_label_field(task)
+def score_prediction(
+    task: EvalTask,
+    parsed_output: dict[str, Any] | None,
+    scoring: ScoringConfig | None = None,
+) -> dict[str, Any]:
+    scoring = scoring or ScoringConfig()
+    field = primary_label_field(task, scoring)
     if field is None or parsed_output is None:
         return {"scoreable": False, "correct": None, "label_field": field}
     expected = task.labels.get(field)
-    actual = parsed_output.get(field)
+    prediction_field = scoring.prediction_field or field
+    actual = parsed_output.get(prediction_field)
     if expected is None or actual is None:
         return {"scoreable": False, "correct": None, "label_field": field}
+    if scoring.kind in {"field_match", "multiple_choice"} and scoring.normalize:
+        expected_for_compare = normalize_answer(expected)
+        actual_for_compare = normalize_answer(actual)
+    else:
+        expected_for_compare = expected
+        actual_for_compare = actual
     return {
         "scoreable": True,
-        "correct": actual == expected,
+        "correct": actual_for_compare == expected_for_compare,
         "label_field": field,
+        "prediction_field": prediction_field,
         "expected": expected,
         "actual": actual,
     }
+
+
+def normalize_answer(value: Any) -> str:
+    return " ".join(str(value).strip().lower().replace("_", " ").split())
 
 
 def percentile(values: list[float], pct: float) -> float | None:
@@ -66,7 +104,11 @@ def _binary_metrics(scored: list[dict[str, Any]]) -> dict[str, float | None]:
     return {"precision": round(precision, 4), "recall": round(recall, 4), "f1": round(f1, 4)}
 
 
-def compute_metrics(tasks: list[EvalTask], predictions: list[dict[str, Any]]) -> dict[str, Any]:
+def compute_metrics(
+    tasks: list[EvalTask],
+    predictions: list[dict[str, Any]],
+    scoring: ScoringConfig | None = None,
+) -> dict[str, Any]:
     task_by_id = {task.task_id: task for task in tasks}
     scored: list[dict[str, Any]] = []
     latencies = [float(p.get("latency_ms", 0.0) or 0.0) for p in predictions if p.get("error") is None]
@@ -75,7 +117,7 @@ def compute_metrics(tasks: list[EvalTask], predictions: list[dict[str, Any]]) ->
         task = task_by_id.get(str(prediction.get("task_id")))
         if not task:
             continue
-        score = score_prediction(task, prediction.get("parsed_output"))
+        score = score_prediction(task, prediction.get("parsed_output"), scoring)
         prediction["score"] = score
         if score.get("scoreable"):
             scored.append(score)
@@ -114,7 +156,11 @@ def compute_metrics(tasks: list[EvalTask], predictions: list[dict[str, Any]]) ->
     return metrics
 
 
-def metrics_by_task_type(tasks: list[EvalTask], predictions: list[dict[str, Any]]) -> dict[str, Any]:
+def metrics_by_task_type(
+    tasks: list[EvalTask],
+    predictions: list[dict[str, Any]],
+    scoring: ScoringConfig | None = None,
+) -> dict[str, Any]:
     task_by_id = {task.task_id: task for task in tasks}
     task_groups: dict[str, list[EvalTask]] = defaultdict(list)
     pred_groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -125,19 +171,23 @@ def metrics_by_task_type(tasks: list[EvalTask], predictions: list[dict[str, Any]
         if task:
             pred_groups[task.task_type].append(prediction)
     return {
-        task_type: compute_metrics(task_groups[task_type], pred_groups.get(task_type, []))
+        task_type: compute_metrics(task_groups[task_type], pred_groups.get(task_type, []), scoring)
         for task_type in sorted(task_groups)
     }
 
 
-def confusion_counts(tasks: list[EvalTask], predictions: list[dict[str, Any]]) -> dict[str, int]:
+def confusion_counts(
+    tasks: list[EvalTask],
+    predictions: list[dict[str, Any]],
+    scoring: ScoringConfig | None = None,
+) -> dict[str, int]:
     task_by_id = {task.task_id: task for task in tasks}
     counts: Counter[str] = Counter()
     for prediction in predictions:
         task = task_by_id.get(str(prediction.get("task_id")))
         if not task:
             continue
-        score = score_prediction(task, prediction.get("parsed_output"))
+        score = score_prediction(task, prediction.get("parsed_output"), scoring)
         if not score.get("scoreable") or not isinstance(score.get("expected"), bool):
             continue
         expected = bool(score["expected"])
@@ -151,4 +201,3 @@ def confusion_counts(tasks: list[EvalTask], predictions: list[dict[str, Any]]) -
         else:
             counts["tn"] += 1
     return dict(counts)
-

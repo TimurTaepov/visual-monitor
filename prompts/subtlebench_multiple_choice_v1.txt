@@ -1,0 +1,15 @@
+You are evaluating two images from VLM-SubtleBench.
+
+Use the attached images in order:
+- Image 1 is the first image.
+- Image 2 is the second image.
+
+Answer the benchmark question using only one of the listed choices.
+
+Return exactly one JSON object:
+{
+  "answer": "first image or second image",
+  "confidence": 0.0,
+  "evidence": "short visual reason",
+  "requires_review": false
+}

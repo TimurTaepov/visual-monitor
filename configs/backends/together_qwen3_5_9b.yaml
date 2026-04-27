@@ -1,0 +1,9 @@
+backend: provider
+provider: together
+model_name: Qwen/Qwen3.5-9B
+api_key_env: TOGETHER_API_KEY
+temperature: 0.0
+max_tokens: 256
+timeout_seconds: 90
+input_cost_per_1m_tokens_usd: 0.10
+output_cost_per_1m_tokens_usd: 0.15

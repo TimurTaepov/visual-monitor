@@ -40,7 +40,7 @@ def tasks() -> dict[str, list[dict[str, str]]]:
     loaded = load_tasks("data/tasks/eval_tasks.jsonl")
     return {
         "tasks": [
-            {"task_id": task.task_id, "task_type": task.task_type, "image_path": task.image_path}
+            {"task_id": task.task_id, "task_type": task.task_type, "image_paths": task.image_paths}
             for task in loaded
         ]
     }
@@ -53,6 +53,7 @@ def _make_task(request: PredictRequest) -> EvalTask:
     return EvalTask(
         task_id="api_request",
         image_path=request.image_path,
+        image_paths=request.image_paths,
         task_type=request.task_type,
         prompt_template=request.prompt_id or default_prompt,
         expected_schema=request.expected_schema or default_schema,

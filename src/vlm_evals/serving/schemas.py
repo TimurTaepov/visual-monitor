@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 
 
 class PredictRequest(BaseModel):
-    image_path: str
+    image_path: str = ""
+    image_paths: list[str] = Field(default_factory=list)
     task_type: str
     backend_config: str
     prompt_id: str | None = None

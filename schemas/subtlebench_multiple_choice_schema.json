@@ -1,0 +1,31 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "answer": {
+      "title": "Answer",
+      "type": "string"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "evidence": {
+      "title": "Evidence",
+      "type": "string"
+    },
+    "requires_review": {
+      "title": "Requires Review",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "answer",
+    "confidence",
+    "evidence",
+    "requires_review"
+  ],
+  "title": "MultipleChoiceOutput",
+  "type": "object"
+}

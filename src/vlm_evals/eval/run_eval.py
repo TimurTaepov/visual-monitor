@@ -6,12 +6,13 @@ from typing import Any
 
 from vlm_evals.backends import create_backend, load_backend_config
 from vlm_evals.backends.base import prediction_record
+from vlm_evals.datasets import load_eval_tasks
 from vlm_evals.eval.hallucination import hallucination_flags
 from vlm_evals.eval.json_validation import parse_and_validate
-from vlm_evals.eval.metrics import compute_metrics, score_prediction
+from vlm_evals.eval.metrics import ScoringConfig, compute_metrics, score_prediction, scoring_config_from_dict
 from vlm_evals.eval.report import build_report, write_report
 from vlm_evals.review.routing import ReviewPolicy, route_for_review
-from vlm_evals.tasks.loader import load_tasks, write_jsonl
+from vlm_evals.tasks.loader import write_jsonl
 from vlm_evals.tasks.prompt_builder import PromptBuilder
 from vlm_evals.tasks.schemas import EvalTask, schema_json_for
 from vlm_evals.utils.config import ensure_dir, load_yaml
@@ -42,12 +43,13 @@ def _finalize_prediction(
     task: EvalTask,
     prediction: dict[str, Any],
     policy: ReviewPolicy,
+    scoring: ScoringConfig,
 ) -> dict[str, Any]:
     validation = parse_and_validate(prediction.get("raw_output"), task.expected_schema)
     prediction.update(validation)
-    prediction.update(hallucination_flags(task, prediction))
+    prediction.update(hallucination_flags(task, prediction, scoring))
     prediction.update(route_for_review(task, prediction, policy))
-    prediction["score"] = score_prediction(task, prediction.get("parsed_output"))
+    prediction["score"] = score_prediction(task, prediction.get("parsed_output"), scoring)
     return prediction
 
 
@@ -65,6 +67,7 @@ def evaluate_backend(
         default_prompt_id=config.get("default_prompt_id"),
     )
     policy = _review_policy(config)
+    scoring = scoring_config_from_dict(config)
     predictions: list[dict[str, Any]] = []
 
     try:
@@ -76,8 +79,15 @@ def evaluate_backend(
             pass
         for task in tasks:
             prediction = _error_prediction(task, backend_info, exc, 0.0)
-            predictions.append(_finalize_prediction(task=task, prediction=prediction, policy=policy))
-        metrics = compute_metrics(tasks, predictions)
+            predictions.append(
+                _finalize_prediction(
+                    task=task,
+                    prediction=prediction,
+                    policy=policy,
+                    scoring=scoring,
+                )
+            )
+        metrics = compute_metrics(tasks, predictions, scoring)
         return {
             "backend_info": backend_info,
             "backend_config": backend_config,
@@ -97,7 +107,14 @@ def evaluate_backend(
             except Exception as exc:
                 prediction = _error_prediction(task, backend_info, exc, timer.elapsed_ms)
 
-            predictions.append(_finalize_prediction(task=task, prediction=prediction, policy=policy))
+            predictions.append(
+                _finalize_prediction(
+                    task=task,
+                    prediction=prediction,
+                    policy=policy,
+                    scoring=scoring,
+                )
+            )
     finally:
         try:
             backend.close()
@@ -108,7 +125,7 @@ def evaluate_backend(
         for prediction in predictions:
             prediction["backend_close_error"] = close_error
 
-    metrics = compute_metrics(tasks, predictions)
+    metrics = compute_metrics(tasks, predictions, scoring)
     return {
         "backend_info": backend_info,
         "backend_config": backend_config,
@@ -120,7 +137,8 @@ def evaluate_backend(
 def run_eval(config_path: str | Path = "configs/eval/default.yaml") -> dict[str, Any]:
     config_path = Path(config_path)
     config = load_yaml(config_path)
-    tasks = load_tasks(config["tasks_path"], config.get("task_types"))
+    tasks = load_eval_tasks(config)
+    scoring = scoring_config_from_dict(config)
     output_dir = ensure_dir(config.get("output_dir", "reports"))
     backend_paths = config.get("backends", [])
     if not backend_paths:
@@ -149,6 +167,7 @@ def run_eval(config_path: str | Path = "configs/eval/default.yaml") -> dict[str,
             tasks=tasks,
             predictions=result["predictions"],
             metrics=result["metrics"],
+            scoring=scoring,
         )
         write_report(report_path, report)
         result["predictions_path"] = str(predictions_path)
@@ -160,7 +179,7 @@ def run_eval(config_path: str | Path = "configs/eval/default.yaml") -> dict[str,
         "config_path": str(config_path),
         "num_tasks": len(tasks),
         "results": all_results,
-        "combined_metrics": compute_metrics(tasks * len(all_results), all_predictions)
+        "combined_metrics": compute_metrics(tasks * len(all_results), all_predictions, scoring)
         if all_results
         else {},
     }

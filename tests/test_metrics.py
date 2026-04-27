@@ -1,6 +1,6 @@
 import unittest
 
-from vlm_evals.eval.metrics import compute_metrics, score_prediction
+from vlm_evals.eval.metrics import ScoringConfig, compute_metrics, score_prediction
 from vlm_evals.tasks.schemas import EvalTask
 
 
@@ -45,7 +45,26 @@ class MetricsTests(unittest.TestCase):
         self.assertEqual(metrics["valid_json_rate"], 1.0)
         self.assertEqual(metrics["p95_latency_ms"], 10.0)
 
+    def test_scores_multiple_choice_with_normalization(self):
+        task = EvalTask(
+            task_id="s1",
+            image_paths=["first.jpg", "second.jpg"],
+            task_type="subtlebench_multiple_choice",
+            prompt_template="subtlebench_multiple_choice_v1",
+            expected_schema="subtlebench_multiple_choice_schema",
+            labels={"answer": "second image"},
+            metadata={},
+        )
+        scoring = ScoringConfig(
+            kind="multiple_choice",
+            label_field="answer",
+            prediction_field="answer",
+            normalize=True,
+        )
+        score = score_prediction(task, {"answer": " Second  Image "}, scoring)
+        self.assertTrue(score["scoreable"])
+        self.assertTrue(score["correct"])
+
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -1,4 +1,4 @@
-.PHONY: setup eval eval-vllm compare serve benchmark benchmark-vllm review test format lint
+.PHONY: setup eval eval-vllm eval-subtlebench compare serve benchmark benchmark-vllm review test format lint
 
 PYTHONPATH := src
 
@@ -10,6 +10,9 @@ eval:
 
 eval-vllm:
 	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.eval.run_eval --config configs/eval/small_vlm_matrix.yaml
+
+eval-subtlebench:
+	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.eval.run_eval --config configs/eval/subtlebench_together.yaml
 
 compare:
 	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.eval.compare --config configs/eval/small_vlm_matrix.yaml

@@ -3,7 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from vlm_evals.eval.metrics import confusion_counts, metrics_by_task_type
+from vlm_evals.eval.metrics import ScoringConfig, confusion_counts, metrics_by_task_type
+from vlm_evals.eval.robustness import metrics_by_metadata
 from vlm_evals.tasks.schemas import EvalTask
 
 
@@ -22,14 +23,17 @@ def build_report(
     tasks: list[EvalTask],
     predictions: list[dict[str, Any]],
     metrics: dict[str, Any],
+    scoring: ScoringConfig | None = None,
 ) -> str:
-    by_task = metrics_by_task_type(tasks, predictions)
+    by_task = metrics_by_task_type(tasks, predictions, scoring)
+    by_category = metrics_by_metadata(tasks, predictions, "category", scoring)
+    by_domain = metrics_by_metadata(tasks, predictions, "domain", scoring)
     failures = [
         p
         for p in predictions
         if p.get("score", {}).get("scoreable") and p.get("score", {}).get("correct") is False
     ][:10]
-    confusion = confusion_counts(tasks, predictions)
+    confusion = confusion_counts(tasks, predictions, scoring)
 
     lines: list[str] = [
         f"# VLM Evaluation Report: {run_id}",
@@ -79,6 +83,38 @@ def build_report(
             )
             + " |"
         )
+
+    if any(value != "unknown" for value in by_category):
+        lines.extend(["", "## Metrics By Category", "", "| Category | Accuracy | JSON Valid | p95 Latency |", "|---|---:|---:|---:|"])
+        for category, category_metrics in by_category.items():
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        category,
+                        format_metric(category_metrics.get("accuracy")),
+                        format_metric(category_metrics.get("valid_json_rate")),
+                        format_metric(category_metrics.get("p95_latency_ms")),
+                    ]
+                )
+                + " |"
+            )
+
+    if any(value != "unknown" for value in by_domain):
+        lines.extend(["", "## Metrics By Domain", "", "| Domain | Accuracy | JSON Valid | p95 Latency |", "|---|---:|---:|---:|"])
+        for domain, domain_metrics in by_domain.items():
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        domain,
+                        format_metric(domain_metrics.get("accuracy")),
+                        format_metric(domain_metrics.get("valid_json_rate")),
+                        format_metric(domain_metrics.get("p95_latency_ms")),
+                    ]
+                )
+                + " |"
+            )
 
     lines.extend(["", "## Confusion Counts", ""])
     if confusion:
@@ -131,4 +167,3 @@ def write_report(path: str | Path, content: str) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
-

@@ -59,6 +59,18 @@ class MockBackend(VisionModelBackend):
                 "requires_review": requires_review,
             }
 
+        if "multiple_choice" in task.expected_schema:
+            answer = str(task.labels.get("answer", "first image"))
+            if flip:
+                choices = [str(choice) for choice in task.metadata.get("choices", [])]
+                answer = next((choice for choice in choices if choice != answer), answer)
+            return {
+                "answer": answer,
+                "confidence": confidence,
+                "evidence": self._evidence(task, "image comparison"),
+                "requires_review": requires_review,
+            }
+
         answer = bool(task.labels.get("answer", False))
         if flip:
             answer = not answer
@@ -79,4 +91,3 @@ class MockBackend(VisionModelBackend):
     def _evidence(task: EvalTask, noun: str) -> str:
         source = task.metadata.get("source_dataset", "sample")
         return f"Mock evidence derived from {source} labels for {noun}."
-

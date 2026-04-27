@@ -2,17 +2,28 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 
 class EvalTask(BaseModel):
     task_id: str
-    image_path: str
+    image_path: str = ""
+    image_paths: list[str] = Field(default_factory=list)
     task_type: str
     prompt_template: str
     expected_schema: str
     labels: dict[str, Any]
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def normalize_image_paths(self) -> "EvalTask":
+        if not self.image_paths and self.image_path:
+            self.image_paths = [self.image_path]
+        elif self.image_paths and not self.image_path:
+            self.image_path = self.image_paths[0]
+        if not self.image_paths:
+            raise ValueError("EvalTask must include image_path or image_paths")
+        return self
 
 
 class ObjectPresenceOutput(BaseModel):
@@ -43,6 +54,15 @@ class SafetyCheckOutput(BaseModel):
     requires_review: bool
 
 
+class MultipleChoiceOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    answer: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    evidence: str
+    requires_review: bool
+
+
 SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "object_presence_schema": ObjectPresenceOutput,
     "object_presence_schema_v1": ObjectPresenceOutput,
@@ -50,6 +70,8 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "retail_shelf_schema_v1": RetailShelfOutput,
     "safety_check_schema": SafetyCheckOutput,
     "safety_check_schema_v1": SafetyCheckOutput,
+    "multiple_choice_schema": MultipleChoiceOutput,
+    "subtlebench_multiple_choice_schema": MultipleChoiceOutput,
 }
 
 
@@ -79,4 +101,3 @@ def validate_output(schema_id: str, output: dict[str, Any] | None) -> tuple[bool
     except (KeyError, ValidationError) as exc:
         return False, str(exc), None
     return True, None, model.model_dump()
-

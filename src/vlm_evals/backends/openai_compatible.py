@@ -5,7 +5,7 @@ from typing import Any
 from vlm_evals.backends.base import prediction_record
 from vlm_evals.tasks.schemas import EvalTask
 from vlm_evals.utils.cost import estimate_request_cost
-from vlm_evals.utils.image import encode_image_data_url
+from vlm_evals.utils.image import image_url_payload
 from vlm_evals.utils.timing import Timer
 
 
@@ -26,17 +26,19 @@ class OpenAICompatibleVisionClient:
         self.reported_model_name = reported_model_name
 
     def predict(self, task: EvalTask, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
-        image_payload = encode_image_data_url(task.image_path)
+        content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
+        for idx, image_path in enumerate(task.image_paths, start=1):
+            if len(task.image_paths) > 1:
+                content.append({"type": "text", "text": f"Image {idx}:"})
+            content.append({"type": "image_url", "image_url": {"url": image_url_payload(image_path)}})
+
         with Timer() as timer:
             response = self.client.chat.completions.create(
                 model=self.request_model_name,
                 messages=[
                     {
                         "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {"type": "image_url", "image_url": {"url": image_payload}},
-                        ],
+                        "content": content,
                     }
                 ],
                 temperature=float(self.config.get("temperature", 0.0)),

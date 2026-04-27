@@ -73,3 +73,55 @@ Then point `base_url` at the server:
 ```yaml
 base_url: http://127.0.0.1:8001/v1
 ```
+
+## Run VLM-SubtleBench on Together
+
+Download the dataset first. It is large, so keep it outside git:
+
+```bash
+python -c "from huggingface_hub import snapshot_download; snapshot_download('KRAFTON/VLM-SubtleBench', repo_type='dataset', local_dir='VLM-SubtleBench')"
+```
+
+Set the Together key:
+
+```bash
+export TOGETHER_API_KEY=...
+```
+
+Then run:
+
+```bash
+make eval-subtlebench
+```
+
+The config is:
+
+```text
+configs/eval/subtlebench_together.yaml
+```
+
+What it does:
+
+1. Reads the VLM-SubtleBench metadata from `VLM-SubtleBench/data/test.jsonl`, `VLM-SubtleBench/data/test.json`, or `qa.json`.
+2. Creates one eval task per image pair.
+3. Sends both images to the provider endpoint in order.
+4. Asks the model to return JSON with `answer`, `confidence`, `evidence`, and `requires_review`.
+5. Scores `answer` against the benchmark label.
+6. Writes predictions and a report under `reports/subtlebench/`, including category and domain breakdowns.
+
+Useful config fields:
+
+- `dataset.split`: `test`, `val`, or `all`
+- `dataset.category`: one category or a list, for example `state`
+- `dataset.domain`: one domain or a list, for example `industrial`
+- `dataset.max_examples`: set this for a small check before running the full split
+- `dataset.skip_missing_images`: keeps the run moving when local medical images are not present
+- `backends`: point this to the Together model config you want to evaluate
+
+To use a different Together-hosted VLM, edit:
+
+```text
+configs/backends/together_qwen3_5_9b.yaml
+```
+
+and change `model_name`.

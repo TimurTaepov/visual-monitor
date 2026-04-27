@@ -9,5 +9,8 @@ data/raw/*
 !data/raw/.gitkeep
 reports/*.jsonl
 reports/*.md
+reports/**/*.jsonl
+reports/**/*.md
 !reports/.gitkeep
 logs/
+VLM-SubtleBench/

@@ -32,7 +32,7 @@ class OpenAICompatibleVisionClientTests(unittest.TestCase):
             image_path.write_bytes(b"abc")
             task = EvalTask(
                 task_id="t1",
-                image_path=str(image_path),
+                image_paths=[str(image_path), "https://example.com/second.png"],
                 task_type="object_presence",
                 prompt_template="object_presence_v1",
                 expected_schema="object_presence_schema",
@@ -55,7 +55,10 @@ class OpenAICompatibleVisionClientTests(unittest.TestCase):
         self.assertEqual(request["max_tokens"], 42)
         self.assertEqual(request["timeout"], 3.0)
         self.assertEqual(request["messages"][0]["content"][0]["text"], "is the object visible?")
-        self.assertTrue(request["messages"][0]["content"][1]["image_url"]["url"].startswith("data:image/png;base64,"))
+        self.assertEqual(request["messages"][0]["content"][1]["text"], "Image 1:")
+        self.assertTrue(request["messages"][0]["content"][2]["image_url"]["url"].startswith("data:image/png;base64,"))
+        self.assertEqual(request["messages"][0]["content"][3]["text"], "Image 2:")
+        self.assertEqual(request["messages"][0]["content"][4]["image_url"]["url"], "https://example.com/second.png")
         self.assertEqual(prediction["backend"], "vllm")
         self.assertEqual(prediction["model_name"], "org/model")
         self.assertEqual(prediction["raw_output"], '{"answer": true}')

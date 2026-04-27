@@ -24,11 +24,16 @@ class PromptBuilder:
             raise ValueError(f"Task {task.task_id} does not define a prompt template")
         prompt = self.load(prompt_id)
         metadata = "\n".join(f"- {k}: {v}" for k, v in sorted(task.metadata.items()))
+        if len(task.image_paths) == 1:
+            image_lines = f"Image path: {task.image_path}"
+        else:
+            image_lines = "Image paths:\n" + "\n".join(
+                f"- image {idx}: {path}" for idx, path in enumerate(task.image_paths, start=1)
+            )
         return (
             f"{prompt.rstrip()}\n\n"
             f"Task id: {task.task_id}\n"
             f"Task type: {task.task_type}\n"
-            f"Image path: {task.image_path}\n"
+            f"{image_lines}\n"
             f"Metadata:\n{metadata if metadata else '- none'}\n"
         )
-

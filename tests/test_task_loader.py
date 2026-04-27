@@ -26,8 +26,8 @@ class TaskLoaderTests(unittest.TestCase):
             tasks = load_tasks(path)
             self.assertEqual(len(tasks), 1)
             self.assertEqual(tasks[0].task_id, "t1")
+            self.assertEqual(tasks[0].image_paths, ["image.jpg"])
 
 
 if __name__ == "__main__":
     unittest.main()
-
