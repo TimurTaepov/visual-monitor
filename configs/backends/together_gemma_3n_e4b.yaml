@@ -1,0 +1,9 @@
+backend: provider
+provider: together
+model_name: google/gemma-3n-E4B-it
+api_key_env: TOGETHER_API_KEY
+temperature: 0.0
+max_tokens: 256
+timeout_seconds: 90
+input_cost_per_1m_tokens_usd: 0.06
+output_cost_per_1m_tokens_usd: 0.12

@@ -24,6 +24,9 @@ def load_subtlebench_tasks(config: dict[str, Any]) -> list[EvalTask]:
     has_caption_only = bool(config.get("has_caption_only", False))
     skip_missing_images = bool(config.get("skip_missing_images", True))
     max_examples = config.get("max_examples")
+    max_examples_int = int(max_examples) if max_examples is not None else None
+    answer_mode = str(config.get("answer_mode", "all"))
+    sample_strategy = str(config.get("sample_strategy", "first_available"))
 
     tasks: list[EvalTask] = []
     for idx, row in enumerate(rows):
@@ -36,14 +39,26 @@ def load_subtlebench_tasks(config: dict[str, Any]) -> list[EvalTask]:
         if has_caption_only and not bool(row.get("has_caption")):
             continue
 
+        answer = _answer_for_mode(row, answer_mode)
+        if answer is None:
+            continue
+
         image_paths = _image_paths(row, dataset_root)
         if skip_missing_images and not _images_available(image_paths):
             continue
 
-        tasks.append(_row_to_task(row, image_paths, idx, config))
-        if max_examples is not None and len(tasks) >= int(max_examples):
+        tasks.append(_row_to_task(row, image_paths, idx, config, answer))
+        if (
+            max_examples_int is not None
+            and sample_strategy == "first_available"
+            and len(tasks) >= max_examples_int
+        ):
             break
 
+    if sample_strategy == "balanced_by_category" and max_examples_int is not None:
+        return _balanced_sample(tasks, max_examples_int, metadata_key="category")
+    if max_examples_int is not None:
+        return tasks[:max_examples_int]
     return tasks
 
 
@@ -118,6 +133,28 @@ def _optional_filter(value: Any) -> set[str]:
     return {str(value).lower()}
 
 
+def _answer_for_mode(row: dict[str, Any], answer_mode: str) -> str | None:
+    answer = str(row["answer"])
+    if answer_mode in {"all", "", "none"}:
+        return answer
+    if answer_mode == "image_choice":
+        return _image_choice_answer(answer)
+    raise ValueError(f"Unknown SubtleBench answer_mode {answer_mode!r}")
+
+
+def _image_choice_answer(value: str) -> str | None:
+    normalized = _normalize_choice(value).strip(" .")
+    aliases = {
+        "first image": "first image",
+        "the first image": "first image",
+        "image 1": "first image",
+        "second image": "second image",
+        "the second image": "second image",
+        "image 2": "second image",
+    }
+    return aliases.get(normalized)
+
+
 def _image_paths(row: dict[str, Any], dataset_root: Path) -> list[str]:
     image_1 = _image_value(row, ["image_1", "first_image", "image1", "image_1_path"])
     image_2 = _image_value(row, ["image_2", "second_image", "image2", "image_2_path"])
@@ -171,15 +208,18 @@ def _row_to_task(
     image_paths: list[str],
     idx: int,
     config: dict[str, Any],
+    answer: str,
 ) -> EvalTask:
-    answer = str(row["answer"])
-    choices = _choices(row)
+    choices = _choices(row, answer)
     source_id = str(row.get("source_id", idx))
     source = str(row.get("source", "unknown"))
     split = str(config.get("split", row.get("split", "all")))
-    task_id = str(row.get("id") or f"subtlebench:{split}:{source}:{source_id}")
+    category = str(row.get("category", "unknown"))
+    row_id = str(row.get("id") or f"{source}:{source_id}")
+    task_id = f"subtlebench:{split}:{idx}:{category}:{row_id}"
     metadata = {
         "benchmark": "VLM-SubtleBench",
+        "row_index": idx,
         "question": row.get("question"),
         "choices": choices,
         "category": row.get("category"),
@@ -202,12 +242,14 @@ def _row_to_task(
     )
 
 
-def _choices(row: dict[str, Any]) -> list[str]:
+def _choices(row: dict[str, Any], answer: str) -> list[str]:
     values: list[str] = []
-    if isinstance(row.get("choices"), list):
+    if answer in {"first image", "second image"}:
+        values.extend(["first image", "second image"])
+    elif isinstance(row.get("choices"), list):
         values.extend(str(value) for value in row["choices"])
     else:
-        values.append(str(row["answer"]))
+        values.append(answer)
         distractors = row.get("distractors", [])
         if isinstance(distractors, list):
             values.extend(str(value) for value in distractors)
@@ -226,3 +268,23 @@ def _choices(row: dict[str, Any]) -> list[str]:
 
 def _normalize_choice(value: str) -> str:
     return " ".join(value.strip().lower().replace("_", " ").split())
+
+
+def _balanced_sample(tasks: list[EvalTask], max_examples: int, metadata_key: str) -> list[EvalTask]:
+    groups: dict[str, list[EvalTask]] = {}
+    for task in tasks:
+        value = str(task.metadata.get(metadata_key, "unknown"))
+        groups.setdefault(value, []).append(task)
+
+    selected: list[EvalTask] = []
+    group_names = sorted(groups)
+    while len(selected) < max_examples:
+        progressed = False
+        for group_name in group_names:
+            group = groups[group_name]
+            if group and len(selected) < max_examples:
+                selected.append(group.pop(0))
+                progressed = True
+        if not progressed:
+            break
+    return selected
