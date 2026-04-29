@@ -32,4 +32,4 @@ The report includes:
 - latency
 - estimated cost, when configured
 
-For real model runs, record the model revision, vLLM version, hardware, backend config, and dataset version. Otherwise the numbers will be hard to reproduce.
+For real model runs, record the model revision, runtime package version, hardware, backend config, and dataset version. Otherwise the numbers will be hard to reproduce.

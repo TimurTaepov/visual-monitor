@@ -1,0 +1,19 @@
+run_id: onnx_matrix_v1
+tasks_path: data/tasks/eval_tasks.jsonl
+output_dir: reports
+prompt_dir: prompts
+default_prompt_id: object_presence_v1
+task_types: null
+
+scoring:
+  kind: exact_match
+  label_field: answer
+  prediction_field: answer
+  normalize: true
+
+review:
+  confidence_threshold: 0.7
+  high_risk_task_types: []
+
+backends:
+  - configs/backends/phi3_5_vision_onnx.yaml

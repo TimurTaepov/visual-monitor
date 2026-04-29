@@ -9,7 +9,7 @@ from vlm_evals.tasks.loader import write_jsonl
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default="configs/eval/small_vlm_matrix.yaml")
+    parser.add_argument("--config", default="configs/eval/onnx_matrix.yaml")
     args = parser.parse_args()
     summary = run_eval(args.config)
     rows = []
@@ -36,4 +36,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

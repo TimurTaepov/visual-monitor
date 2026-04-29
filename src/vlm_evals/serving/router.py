@@ -4,12 +4,12 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
-from vlm_evals.backends import create_backend
 from vlm_evals.eval.hallucination import hallucination_flags
 from vlm_evals.eval.json_validation import parse_and_validate
 from vlm_evals.eval.metrics import score_prediction
 from vlm_evals.eval.run_eval import run_eval
 from vlm_evals.review.routing import ReviewPolicy, route_for_review
+from vlm_evals.serving.backend_manager import backend_manager
 from vlm_evals.serving.schemas import BatchPredictRequest, PredictRequest
 from vlm_evals.tasks.loader import load_tasks
 from vlm_evals.tasks.prompt_builder import PromptBuilder
@@ -64,18 +64,14 @@ def _make_task(request: PredictRequest) -> EvalTask:
 
 def predict_one(request: PredictRequest) -> dict:
     task = _make_task(request)
-    backend = create_backend(request.backend_config)
-    try:
-        backend.start()
+    with backend_manager.backend(request.backend_config) as backend:
         prompt = PromptBuilder().build(task)
         prediction = backend.predict(task, prompt, schema_json_for(task.expected_schema))
-        prediction.update(parse_and_validate(prediction.get("raw_output"), task.expected_schema))
-        prediction.update(hallucination_flags(task, prediction))
-        prediction.update(route_for_review(task, prediction, ReviewPolicy()))
-        prediction["score"] = score_prediction(task, prediction.get("parsed_output"))
-        return prediction
-    finally:
-        backend.close()
+    prediction.update(parse_and_validate(prediction.get("raw_output"), task.expected_schema))
+    prediction.update(hallucination_flags(task, prediction))
+    prediction.update(route_for_review(task, prediction, ReviewPolicy()))
+    prediction["score"] = score_prediction(task, prediction.get("parsed_output"))
+    return prediction
 
 
 @router.post("/predict")

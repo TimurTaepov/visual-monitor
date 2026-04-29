@@ -1,4 +1,4 @@
-.PHONY: setup eval eval-vllm eval-subtlebench compare serve benchmark benchmark-vllm review test format lint
+.PHONY: setup eval eval-onnx eval-subtlebench compare serve benchmark benchmark-onnx review test format lint
 
 PYTHONPATH := src
 SUBTLEBENCH_CONFIG ?= configs/eval/subtlebench_together.yaml
@@ -9,14 +9,14 @@ setup:
 eval:
 	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.eval.run_eval --config configs/eval/default.yaml
 
-eval-vllm:
-	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.eval.run_eval --config configs/eval/small_vlm_matrix.yaml
+eval-onnx:
+	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.eval.run_eval --config configs/eval/onnx_matrix.yaml
 
 eval-subtlebench:
 	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.eval.run_eval --config $(SUBTLEBENCH_CONFIG)
 
 compare:
-	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.eval.compare --config configs/eval/small_vlm_matrix.yaml
+	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.eval.compare --config configs/eval/onnx_matrix.yaml
 
 serve:
 	PYTHONPATH=$(PYTHONPATH) uvicorn vlm_evals.serving.app:app --host 0.0.0.0 --port 8000
@@ -24,8 +24,8 @@ serve:
 benchmark:
 	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.benchmark.load_test --config configs/eval/default.yaml
 
-benchmark-vllm:
-	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.benchmark.load_test --config configs/eval/small_vlm_matrix.yaml
+benchmark-onnx:
+	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.benchmark.load_test --config configs/eval/onnx_matrix.yaml
 
 review:
 	PYTHONPATH=$(PYTHONPATH) python -m vlm_evals.review.cli_review

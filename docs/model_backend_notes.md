@@ -2,19 +2,17 @@
 
 Use this file to record which models actually run in the local environment.
 
-| Model | Status | Notes |
-|---|---|---|
-| mistralai/Ministral-3-3B-Instruct-2512 | not tested | vLLM config exists. |
-| Qwen/Qwen3-VL-2B-Instruct | not tested | vLLM config exists. |
-| OpenGVLab/InternVL3_5-2B-HF | not tested | vLLM config exists. |
-| HuggingFaceTB/SmolVLM2-2.2B-Instruct | not tested | vLLM config exists. |
-| Qwen/Qwen3.5-9B | not tested | Together config exists. Replace with another Together vision model when needed. |
+| Model | Backend | Status | Notes |
+|---|---|---|---|
+| microsoft/Phi-3.5-vision-instruct-onnx | ONNX Runtime GenAI | not tested | Example config exists. Download an ONNX export and set `model_path`. |
+| google/gemma-3n-E4B-it | Together provider | smoke tested | 30-example SubtleBench run completed through Together. |
+| Qwen/Qwen3.5-9B | Together provider | not tested | Replace with another provider vision model when needed. |
 
-When testing a model, add:
+When testing a local ONNX model, record:
 
 - machine/GPU
-- vLLM version
-- model revision, if pinned
+- ONNX Runtime GenAI package and version
+- execution provider
+- model export path and model revision
 - whether startup succeeded
-- whether image requests worked
-- any special flags needed in `serve.args`
+- whether one-image and two-image requests worked

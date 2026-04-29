@@ -44,7 +44,7 @@ class OpenAICompatibleVisionClientTests(unittest.TestCase):
                 client=fake_client,
                 config={"temperature": 0.2, "max_tokens": 42, "timeout_seconds": 3},
                 request_model_name="served-model",
-                backend_name="vllm",
+                backend_name="provider",
                 reported_model_name="org/model",
             )
             prediction = client.predict(task, "is the object visible?", {})
@@ -59,7 +59,7 @@ class OpenAICompatibleVisionClientTests(unittest.TestCase):
         self.assertTrue(request["messages"][0]["content"][2]["image_url"]["url"].startswith("data:image/png;base64,"))
         self.assertEqual(request["messages"][0]["content"][3]["text"], "Image 2:")
         self.assertEqual(request["messages"][0]["content"][4]["image_url"]["url"], "https://example.com/second.png")
-        self.assertEqual(prediction["backend"], "vllm")
+        self.assertEqual(prediction["backend"], "provider")
         self.assertEqual(prediction["model_name"], "org/model")
         self.assertEqual(prediction["raw_output"], '{"answer": true}')
         self.assertEqual(prediction["tokens_in"], 11)

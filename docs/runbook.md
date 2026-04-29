@@ -7,7 +7,7 @@ make eval
 make test
 ```
 
-This is the fastest sanity check. It uses the local mock backend, so it does not need vLLM, a GPU, downloaded weights, or API keys.
+This is the fastest sanity check. It uses the local mock backend, so it does not need downloaded weights or API keys.
 
 Expected output:
 
@@ -26,67 +26,61 @@ Then visit:
 - `GET /models`
 - `GET /tasks`
 
-## Run a model with vLLM
+The API keeps model backends alive between requests. It closes them when the FastAPI process shuts down.
 
-Use this when you want vLLM to serve a local model during evaluation.
+## Run a local ONNX model
 
-First check the backend config, for example:
+Use this when you want the eval runner to load an exported ONNX Runtime GenAI model from disk.
+
+First check the backend config:
 
 ```text
-configs/backends/qwen3_vl_2b_vllm.yaml
+configs/backends/phi3_5_vision_onnx.yaml
 ```
 
 The important fields are:
 
-- `model_name`: the Hugging Face model id passed to `vllm serve`
-- `base_url`: where requests will be sent
-- `serve.enabled`: whether the eval runner starts and stops vLLM for you
-- `serve.args`: extra CLI flags passed to `vllm serve`
+- `model_name`: name written to reports
+- `model_path`: local directory containing the exported ONNX Runtime GenAI model
+- `execution_provider`: `follow_config`, `cpu`, `cuda`, `directml`, or a provider name
+- `max_length`: generation length passed to ONNX Runtime GenAI
 
 Then run:
 
 ```bash
-make eval-vllm
+make eval-onnx
 ```
 
 What happens:
 
-1. The eval runner starts `vllm serve <model_name>`.
-2. It waits until `/health` responds.
-3. It sends each image and prompt to the local vLLM server.
-4. It parses the model output as JSON.
-5. It scores the output against the task labels.
-6. It writes predictions and a Markdown report.
-7. It stops the vLLM process.
+1. The eval runner loads the ONNX model once.
+2. It sends each image and prompt to the local model.
+3. It parses the model output as JSON.
+4. It scores the output against the task labels.
+5. It writes predictions and a Markdown report.
+6. It releases the model.
 
-## Use an already running vLLM server
+For CPU, install:
 
-If you started vLLM yourself, set this in the backend config:
-
-```yaml
-serve:
-  enabled: false
+```bash
+pip install -e '.[onnx]'
 ```
 
-Then point `base_url` at the server:
-
-```yaml
-base_url: http://127.0.0.1:8001/v1
-```
+For CUDA or DirectML, install the matching ONNX Runtime GenAI package for that provider.
 
 ## Run VLM-SubtleBench
 
 Download the dataset first. It is large, so keep it outside git:
 
 ```bash
-python -c "from huggingface_hub import snapshot_download; snapshot_download('KRAFTON/VLM-SubtleBench', repo_type='dataset', local_dir='VLM-SubtleBench')"
+HF_HUB_DISABLE_PROGRESS_BARS=1 python -c "from huggingface_hub import snapshot_download; snapshot_download('KRAFTON/VLM-SubtleBench', repo_type='dataset', local_dir='VLM-SubtleBench', max_workers=1)"
 ```
 
 The benchmark setup and the model backend are separate:
 
 - the dataset block tells the runner how to load VLM-SubtleBench
 - the scoring block tells the runner how to score multiple-choice answers
-- the `backends` list tells the runner which model endpoint to call
+- the `backends` list tells the runner which model backend to call
 
 The default command uses the Together example config:
 
@@ -100,10 +94,10 @@ That command reads:
 configs/eval/subtlebench_together.yaml
 ```
 
-To run the same benchmark through vLLM instead:
+To run the same benchmark through a local ONNX model:
 
 ```bash
-make eval-subtlebench SUBTLEBENCH_CONFIG=configs/eval/subtlebench_vllm.yaml
+make eval-subtlebench SUBTLEBENCH_CONFIG=configs/eval/subtlebench_onnx.yaml
 ```
 
 To use another API provider, create or edit a backend config and point `backends` at it:
@@ -128,11 +122,11 @@ timeout_seconds: 90
 
 For Together, use `provider: together`; the base URL and `TOGETHER_API_KEY` default are already handled.
 
-For vLLM, use a `backend: vllm` config. If `serve.enabled: true`, the eval runner starts vLLM, waits for it, sends the benchmark requests, then stops it.
+For ONNX, use `backend: onnx` and point `model_path` at an exported ONNX Runtime GenAI model directory.
 
-What it does:
+What the SubtleBench adapter does:
 
-1. Reads the VLM-SubtleBench metadata from `VLM-SubtleBench/data/test.jsonl`, `VLM-SubtleBench/data/test.json`, or `qa.json`.
+1. Reads the metadata from `VLM-SubtleBench/data/test.jsonl`, `VLM-SubtleBench/data/test.json`, or `qa.json`.
 2. Creates one eval task per image pair.
 3. Sends both images to the configured backend in order.
 4. Asks the model to return JSON with `answer`, `confidence`, `evidence`, and `requires_review`.

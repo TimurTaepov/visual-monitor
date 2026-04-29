@@ -24,8 +24,8 @@ dev = [
 benchmarks = [
   "huggingface_hub>=0.24",
 ]
-vllm = [
-  "vllm",
+onnx = [
+  "onnxruntime-genai>=0.13",
 ]
 
 [tool.setuptools.packages.find]

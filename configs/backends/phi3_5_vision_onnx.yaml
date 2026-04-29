@@ -1,0 +1,7 @@
+backend: onnx
+model_name: microsoft/Phi-3.5-vision-instruct-onnx
+model_path: models/onnx/phi3_5_vision/cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4
+execution_provider: follow_config
+temperature: 0.0
+max_length: 7680
+estimated_cost_per_1k_requests_usd: 0.0

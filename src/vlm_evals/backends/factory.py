@@ -5,8 +5,8 @@ from typing import Any
 
 from vlm_evals.backends.base import VisionModelBackend
 from vlm_evals.backends.mock_backend import MockBackend
+from vlm_evals.backends.onnx_backend import ONNXBackend
 from vlm_evals.backends.provider_backend import ProviderBackend
-from vlm_evals.backends.vllm_backend import VLLMBackend
 from vlm_evals.utils.config import load_yaml
 
 
@@ -23,8 +23,8 @@ def create_backend(path_or_config: str | Path | dict[str, Any]) -> VisionModelBa
     backend_type = str(config.get("backend", "")).lower()
     if backend_type == "mock":
         return MockBackend(config)
-    if backend_type == "vllm":
-        return VLLMBackend(config)
+    if backend_type == "onnx":
+        return ONNXBackend(config)
     if backend_type == "provider":
         return ProviderBackend(config)
     raise ValueError(f"Unknown backend type {backend_type!r}")

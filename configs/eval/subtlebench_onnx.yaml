@@ -1,4 +1,4 @@
-run_id: subtlebench_vllm
+run_id: subtlebench_onnx
 output_dir: reports/subtlebench
 prompt_dir: prompts
 default_prompt_id: subtlebench_multiple_choice_v1
@@ -7,6 +7,8 @@ dataset:
   name: subtlebench
   path: VLM-SubtleBench
   split: test
+  answer_mode: image_choice
+  sample_strategy: balanced_by_category
   category: null
   domain: null
   source: null
@@ -24,4 +26,4 @@ review:
   high_risk_task_types: []
 
 backends:
-  - configs/backends/qwen3_vl_2b_vllm.yaml
+  - configs/backends/phi3_5_vision_onnx.yaml
