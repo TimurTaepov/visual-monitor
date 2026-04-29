@@ -25,25 +25,6 @@ make test
 
 This uses `configs/backends/mock_oracle.yaml`, so it does not download a model or call an API. It only checks that task loading, prompt rendering, validation, scoring, and report writing work.
 
-## Run a local ONNX model
-
-1. Export or download an ONNX Runtime GenAI model directory.
-2. Install the ONNX extra or the provider-specific ONNX Runtime GenAI package.
-3. Point `model_path` in an ONNX backend config at that local directory.
-4. Run:
-
-```bash
-make eval-onnx
-```
-
-The evaluator loads the ONNX model once per backend, sends image+prompt requests through the local ONNX Runtime GenAI API, writes the report, and then releases the model.
-
-To compare several model configs, run:
-
-```bash
-make compare
-```
-
 ## Example: run VLM-SubtleBench
 
 This is one example of a dataset-specific benchmark adapter. The core eval runner is not tied to SubtleBench; it can still run local JSONL tasks or other adapters.
